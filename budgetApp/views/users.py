@@ -74,10 +74,22 @@ class UserResource(Resource):
     def delete(self, user_id):
         """
         Delete particular user.  If he/she doesn't exist, abort with 404.
+        Try to delete user's all bugdet entries.
 
         :param user_id: the id of the sought after user
         :type user_id: str
         """
         abort_no_user(user_id)
+
+        # cascade
+        from .budgets import BUDGETS
+        budgets_to_remove = []
+        for budget_id, budget in BUDGETS.items():
+            if budget["user"] == user_id:
+                budgets_to_remove.append(budget_id)
+
+        for budget in budgets_to_remove:
+            BUDGETS.pop(budget)
+
         del USERS[user_id]
         return '', 204

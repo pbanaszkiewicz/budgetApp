@@ -15,7 +15,10 @@ from .views.users import UsersList, UserResource
 api.add_resource(UsersList, "/users")
 api.add_resource(UserResource, "/users/<string:user_id>")
 
-# Todo routes
-from .views.todos import Todo, TodoList
-api.add_resource(TodoList, '/todos')
-api.add_resource(Todo, '/todos/<string:todo_id>')
+# users' budgets
+from .views.budgets import UsersBudgetList
+api.add_resource(UsersBudgetList, "/users/<string:user_id>/budget")
+
+# budgets
+from .views.budgets import BudgetResource
+api.add_resource(BudgetResource, "/budget/<string:budget_id>")
