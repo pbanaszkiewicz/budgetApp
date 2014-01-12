@@ -1,17 +1,19 @@
 # coding: utf-8
 
+from flask import jsonify
 from flask.ext.restful import Resource, abort
 from flask.ext.restful.reqparse import RequestParser
 
-USERS = {
-    'user1': {"name": "Piotr"},
-    'user2': {"name": "Agata"},
-    'user3': {"name": "Jan Nowak"},
-}
+from ..extensions import db
+from ..models import User
+from ..serializers import UserSerializer
 
 
 users_parser = RequestParser()
-users_parser.add_argument("name", required=True, type=str)
+users_parser.add_argument("email", required=True, type=str)
+users_parser.add_argument("source", required=True, type=str)
+users_parser.add_argument("first_name", required=True, type=str)
+users_parser.add_argument("last_name", required=True, type=str)
 
 
 class UsersList(Resource):
@@ -21,26 +23,30 @@ class UsersList(Resource):
 
     def get(self):
         """
-        Return the list of all users.
+        Return all of the users.
         """
-        return USERS
+        users = User.query.all()
+        return {"users": UserSerializer(users, many=True).data}
 
     def post(self):
         """
-        Take new user, add it to the list and return him/her back.
+        Take new user, add it to the database and return him/her back.
         """
         args = users_parser.parse_args()
-        user_id = "user{}".format(len(USERS) + 1)
-        USERS[user_id] = {"name": args["name"]}
-        return USERS[user_id], 201
+        user = User(args["email"], args["source"], args["first_name"],
+                    args["last_name"])
+        db.session.add(user)
+        db.session.commit()
+        print(UserSerializer(User.query.get(2)).data)
+        # user = UserSerializer(User.query.get(user.id)).data
+        return {"user": UserSerializer(User.query.get(user.id)).data}, 201
 
 
 def abort_no_user(user_id):
     """
     Abort current request if the user is not present in database.
     """
-    if user_id not in USERS:
-        abort(404, message="User {} doesn't exist".format(user_id))
+    User.query.filter_by(id=user_id).first_or_404()
 
 
 class UserResource(Resource):
@@ -56,8 +62,8 @@ class UserResource(Resource):
         :param user_id: the id of the sought after user
         :type user_id: str
         """
-        abort_no_user(user_id)
-        return USERS[user_id]
+        user = User.query.filter_by(id=user_id).first_or_404()
+        return {"user": UserSerializer(user).data}
 
     def put(self, user_id):
         """
@@ -66,10 +72,15 @@ class UserResource(Resource):
         :param user_id: the id of the sought after user
         :type user_id: str
         """
-        abort_no_user(user_id)
         args = users_parser.parse_args()
-        USERS[user_id] = {"name": args["name"]}
-        return USERS[user_id], 201
+        user = User.query.filter_by(id=user_id).first_or_404()
+        user.email, user.source, user.first_name, user.last_name = (
+            args["email"],
+            args["source"],
+            args["first_name"],
+            args["last_name"]
+        )
+        return {"user": UserSerializer(user).data}, 201
 
     def delete(self, user_id):
         """
@@ -79,17 +90,7 @@ class UserResource(Resource):
         :param user_id: the id of the sought after user
         :type user_id: str
         """
-        abort_no_user(user_id)
-
-        # cascade
-        from .budgets import BUDGETS
-        budgets_to_remove = []
-        for budget_id, budget in BUDGETS.items():
-            if budget["user"] == user_id:
-                budgets_to_remove.append(budget_id)
-
-        for budget in budgets_to_remove:
-            BUDGETS.pop(budget)
-
-        del USERS[user_id]
+        user = User.query.filter_by(id=user_id).first_or_404()
+        db.session.delete(user)
+        db.session.commit()
         return '', 204

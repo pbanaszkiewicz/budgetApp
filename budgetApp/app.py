@@ -13,7 +13,7 @@ from budgetApp.extensions import db
 
 def create_app(config_object=ProdConfig):
     """
-    An application factory (http://flask.pocoo.org/docs/patterns/appfactories/)
+    Application factory (http://flask.pocoo.org/docs/patterns/appfactories/)
 
     :param config_object: The configuration object to use.
     """
@@ -27,6 +27,9 @@ def create_app(config_object=ProdConfig):
 
 
 def register_api(app):
+    """
+    Register Flask-RESTful APIs.
+    """
     api = Api(app)
 
     # users
