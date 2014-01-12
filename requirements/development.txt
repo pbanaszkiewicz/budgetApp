@@ -1,0 +1,6 @@
+-r production.txt
+requests
+pytest
+pytest-cov
+Flask-Script
+Flask-DebugToolbar
