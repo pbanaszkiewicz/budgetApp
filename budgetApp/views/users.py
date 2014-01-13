@@ -1,7 +1,6 @@
 # coding: utf-8
 
-from flask import jsonify
-from flask.ext.restful import Resource, abort
+from flask.ext.restful import Resource
 from flask.ext.restful.reqparse import RequestParser
 
 from ..extensions import db
@@ -80,6 +79,8 @@ class UserResource(Resource):
             args["first_name"],
             args["last_name"]
         )
+        db.session.update(user)
+        db.session.commit()
         return {"user": UserSerializer(user).data}, 201
 
     def delete(self, user_id):

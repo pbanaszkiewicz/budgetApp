@@ -35,15 +35,15 @@ def register_api(app):
     # users
     from .views.users import UsersList, UserResource
     api.add_resource(UsersList, "/users")
-    api.add_resource(UserResource, "/users/<string:user_id>")
+    api.add_resource(UserResource, "/users/<int:user_id>")
 
     # users' budgets
     from .views.budgets import UsersBudgetList
-    api.add_resource(UsersBudgetList, "/users/<string:user_id>/budget")
+    api.add_resource(UsersBudgetList, "/users/<int:user_id>/budget")
 
     # budgets
     from .views.budgets import BudgetResource
-    api.add_resource(BudgetResource, "/budget/<string:budget_id>")
+    api.add_resource(BudgetResource, "/budget/<int:budget_id>")
 
     return None
 

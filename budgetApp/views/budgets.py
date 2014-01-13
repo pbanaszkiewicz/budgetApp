@@ -4,33 +4,25 @@ from delorean import Delorean
 from flask.ext.restful import Resource, abort, types
 from flask.ext.restful.reqparse import RequestParser
 from decimal import Decimal
+
+from ..extensions import db
+from ..models import Budget, User
+from ..serializers import BudgetSerializer
 from .users import abort_no_user
 
 DELOREAN_DT_FORMAT = "%Y/%m/%d %H:%M:%S %z"
 DELOREAN_DATE_FORMAT = "%Y/%m/%d"
 DELOREAN_TIME_FORMAT = "%H:%M:%S %z"
 
-BUDGETS = {
-    "budget1":
-    {
-        "user": "user1",
-        "category": "cinema",
-        "description": "Scary Movie 5",
-        "date": Delorean().date,
-        "value": Decimal("60.0"),
-    },
-}
-
-
 budget_parser = RequestParser()
-budget_parser.add_argument("user", required=True, type=str)
+budget_parser.add_argument("user_id", required=True, type=int)
 budget_parser.add_argument("category", required=True, type=str)
 budget_parser.add_argument("description", required=True, type=str)
 budget_parser.add_argument("date", type=types.date)
 budget_parser.add_argument("value", required=True, type=Decimal)
 
 budget_update_parser = RequestParser()
-budget_update_parser.add_argument("user", type=str)
+budget_update_parser.add_argument("user_id", type=int)
 budget_update_parser.add_argument("category", type=str)
 budget_update_parser.add_argument("description", type=str)
 budget_update_parser.add_argument("date", type=types.date)
@@ -49,11 +41,10 @@ class UsersBudgetList(Resource):
         with 404.  If no budgets for the user are found, return empty list.
         """
         abort_no_user(user_id)
-        result = {}
-        for budget_id, budget in BUDGETS.items():
-            if budget["user"] == user_id:
-                result[budget_id] = budget
-        return result or ('Not found', 404)
+        result = Budget.query.filter_by(user_id=user_id)
+        if result:
+            return {"budgets": BudgetSerializer(result, many=True).data}
+        return 'Not found', 404
 
     def post(self, user_id):
         """
@@ -65,20 +56,21 @@ class UsersBudgetList(Resource):
         args = budget_parser.parse_args()
         if "date" not in args:
             args["date"] = Delorean().date.strftime(DELOREAN_DATE_FORMAT),
-        budget = {"user": user_id}
-        budget.update(args)
+        budget = Budget(args["description"], args["category"], args["date"],
+                        args["value"], user_id)
+        db.session.add(budget)
+        db.session.commit()
 
-        budget_id = "budget{}".format(len(BUDGETS) + 1)
-        BUDGETS[budget_id] = budget
-        return budget, 201
+        return {
+            "budget": BudgetSerializer(Budget.query.get(budget.id)).data
+        }, 201
 
 
 def abort_no_budget(budget_id):
     """
     Abort current request if the budget entry is not present in the dabatase.
     """
-    if budget_id not in BUDGETS:
-        abort(404, message="Budget {} doesn't exist".format(budget_id))
+    Budget.query.filter_by(id=budget_id).first_or_404()
 
 
 class BudgetResource(Resource):
@@ -94,8 +86,8 @@ class BudgetResource(Resource):
         :param budget_id: the id of the sought after budget entry
         :type budget_id: str
         """
-        abort_no_budget(budget_id)
-        return BUDGETS[budget_id]
+        budget = Budget.query.filter_by(id=budget_id).first_or_404()
+        return {"budget": BudgetSerializer(budget).data}
 
     def put(self, budget_id):
         """
@@ -104,15 +96,22 @@ class BudgetResource(Resource):
         :param budget_id: the id of the sought after budget entry
         :type budget_id: str
         """
-        abort_no_budget(budget_id)
-
         args = budget_update_parser.parse_args()
-        # if "date" not in args:
-        #     args["date"] = Delorean().date.strftime(DELOREAN_DATE_FORMAT),
-        budget = BUDGETS[budget_id]
-        budget.update(args)
-        BUDGETS[budget_id] = budget
-        return budget, 201
+        budget = Budget.query.filter_by(id=budget_id).first_or_404()
+
+        budget.description, budget.category, budget.value, budget.user_id = (
+            args["description"], args["category"], args["value"],
+            args["user_id"]
+        )
+
+        if "date" not in args:
+            args["date"] = Delorean().date.strftime(DELOREAN_DATE_FORMAT),
+        budget.date = args["date"]
+
+        db.session.update(budget)
+        db.session.commit()
+        return ({"budget": BudgetSerializer(Budget.query.get(budget_id)).data},
+                201)
 
     def delete(self, budget_id):
         """
@@ -122,6 +121,7 @@ class BudgetResource(Resource):
         :param budget_id: the id of the sought after budget entry
         :type budget_id: str
         """
-        abort_no_budget(budget_id)
-        del BUDGETS[budget_id]
+        budget = Budget.query.filter_by(id=budget_id).first_or_404()
+        db.session.delete(budget)
+        db.session.commit()
         return '', 204

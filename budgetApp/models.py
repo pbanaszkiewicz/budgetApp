@@ -17,6 +17,13 @@ class User(db.Model):
         self.first_name = first_name
         self.last_name = last_name
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return u'<{} {} ({})>'.format(self.first_name, self.last_name,
+                                      self.email)
+
 
 class Budget(db.Model):
     """Budget item model for specific User."""
@@ -27,3 +34,17 @@ class Budget(db.Model):
     description = db.Column(db.String(80))
     date = db.Column(db.DateTime)
     value = db.Column(db.Float)
+
+    def __init__(self, description, category, date, value, user=None):
+        self.description = description
+        self.category = category
+        self.date = date
+        self.value = value
+        self.user_id = user.id
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return u'<{} ({}): {} on {}>'.format(self.description, self.category,
+                                             self.value, self.date)
