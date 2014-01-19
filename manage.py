@@ -15,9 +15,9 @@ from budgetApp.settings import DevConfig, ProdConfig
 from budgetApp.extensions import db
 
 if os.environ.get("BUDGETAPP_ENV") == 'prod':
-    app = create_app(ProdConfig)
+    app = create_app(__name__, ProdConfig)
 else:
-    app = create_app(DevConfig)
+    app = create_app(__name__, DevConfig)
 
 manager = Manager(app)
 

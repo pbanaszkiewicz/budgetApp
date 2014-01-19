@@ -5,22 +5,25 @@ from flask import Flask, render_template
 from flask_debugtoolbar import DebugToolbarExtension
 from flask.ext.restful import Api
 
-from budgetApp.settings import ProdConfig
-# from budgetApp.assets import assets
-from budgetApp.extensions import db
+from .settings import ProdConfig
+# from .assets import assets
+from .extensions import db
 # from budgetApp import public, user
 
 
-def create_app(config_object=ProdConfig):
+def create_app(name_handler, config_object=ProdConfig, set_up_extensions=True):
     """
     Application factory (http://flask.pocoo.org/docs/patterns/appfactories/)
 
+    :param name_handler: name the application is created and bounded to.
     :param config_object: The configuration object to use.
+    :param bool set_up_extensions: register all used extensions.
     """
-    app = Flask(__name__)
+    app = Flask(name_handler)
     app.config.from_object(config_object)
     register_api(app)
-    register_extensions(app)
+    if set_up_extensions:
+        register_extensions(app)
     register_blueprints(app)
     register_errorhandlers(app)
     return app
