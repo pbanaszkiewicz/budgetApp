@@ -1,5 +1,8 @@
 import pytest
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from budgetApp.settings import TestConfig
 from budgetApp.app import create_app
 from budgetApp.models import Base
@@ -11,7 +14,7 @@ def app(request):
     Flask application object factory for testing session with database
     connection.
     """
-    app = create_app(__name__, config_object=TestConfig, set_up_database=False)
+    app = create_app(__name__, config_object=TestConfig, set_up_database=True)
     ctx = app.app_context()
     ctx.push()
 
@@ -40,22 +43,33 @@ def app_no_db(request):
 
 
 @pytest.fixture(scope="session")
-def db(app, request):
+def db(app_no_db, request):
     """
     Database object for testing session.
     """
-    from budgetApp.app import DbSession as _db
-    _db.app = app
-    _db.app.connection = _db.app.engine.connect()
-    Base.metadata.create_all(bind=app.engine)
+    # from budgetApp.app import DbSession as _db
+    # _db.app = app
+    # _db.app.connection = _db.app.engine.connect()
+    # Base.metadata.create_all(bind=app.engine)
     # apply migrations here
 
+    # TODO: add database connecting here
+    _app = app_no_db
+
+    _app.engine = create_engine(_app.config["SQLALCHEMY_DATABASE_URI"])
+    Base.metadata.create_all(bind=_app.engine)
+    _app.connection = _app.engine.connect()
+
+    _app.sessionmaker = sessionmaker()
+
     def teardown():
-        Base.metadata.drop_all(bind=app.engine)
-        _db.app.connection.close()
+        # Base.metadata.drop_all(bind=app.engine)
+        # _db.app.connection.close()
+        _app.connection.close()
+        Base.metadata.drop_all(bind=_app.engine)
     request.addfinalizer(teardown)
 
-    return _db
+    return _app
 
 
 @pytest.fixture(scope="function")
@@ -64,14 +78,12 @@ def session(db, request):
     Creates a new database session (with working transaction) for a test
     duration.
     """
-    db.app.transaction = db.app.connection.begin_nested()
-
-    session = db()
+    db.transaction = db.connection.begin()
+    session = db.sessionmaker(bind=db.connection)
 
     def teardown():
         session.close()
-        db.app.transaction.rollback()  # Y U NO WORKIN !!!
-        # print(session, dir(session))
-
+        db.transaction.rollback()
     request.addfinalizer(teardown)
+
     return session

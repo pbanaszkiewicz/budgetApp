@@ -17,11 +17,14 @@ def test_user_unique(session):
     u1 = User("test@example.com", "web", "John", "Smith")
     u2 = User("test@example.com", "web", "Anna", "Smith")
     session.add(u1)
-    session.commit()  # fails due to transactions not working :C
+    session.commit()
+    assert u1.id is not 0
+
     with pytest.raises(IntegrityError):
         session.add(u2)
         session.commit()
-    assert u1.id is not 0
+        # issues roll
+
     assert u2.id is None
 
 
@@ -30,5 +33,5 @@ def test_user_dbrelation(session):
     # print(session.query(User).all())
     u1 = User("test@example.com", "web", "John", "Smith")
     session.add(u1)
-    session.commit()  # fails due to transactions not working :C
+    session.commit()
     assert u1.budgets == []
