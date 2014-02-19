@@ -47,13 +47,6 @@ def db(app_no_db, request):
     """
     Database object for testing session.
     """
-    # from budgetApp.app import DbSession as _db
-    # _db.app = app
-    # _db.app.connection = _db.app.engine.connect()
-    # Base.metadata.create_all(bind=app.engine)
-    # apply migrations here
-
-    # TODO: add database connecting here
     _app = app_no_db
 
     _app.engine = create_engine(_app.config["SQLALCHEMY_DATABASE_URI"])
@@ -63,8 +56,6 @@ def db(app_no_db, request):
     _app.sessionmaker = sessionmaker()
 
     def teardown():
-        # Base.metadata.drop_all(bind=app.engine)
-        # _db.app.connection.close()
         _app.connection.close()
         Base.metadata.drop_all(bind=_app.engine)
     request.addfinalizer(teardown)

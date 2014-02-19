@@ -44,12 +44,13 @@ class Budget(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", backref=backref("budgets", order_by=date))
 
-    def __init__(self, description, category, date, value, user=None):
+    def __init__(self, description, category, date, value, user):
         self.description = description
         self.category = category
         self.date = date
         self.value = value
-        self.user_id = user.id
+        # self.user_id = user.id
+        self.user = user
 
     def __repr__(self):
         return self.__str__()
