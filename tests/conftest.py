@@ -2,15 +2,33 @@ import pytest
 
 from budgetApp.settings import TestConfig
 from budgetApp.app import create_app
-from budgetApp.extensions import db as _db
+from budgetApp.models import Base
 
 
 @pytest.fixture(scope="session")
 def app(request):
     """
-    Flask application object factory for testing session.
+    Flask application object factory for testing session with database
+    connection.
     """
-    app = create_app(__name__, TestConfig, True)
+    app = create_app(__name__, config_object=TestConfig, set_up_database=True)
+    ctx = app.app_context()
+    ctx.push()
+
+    def teardown():
+        ctx.pop()
+    request.addfinalizer(teardown)
+
+    return app
+
+
+@pytest.fixture(scope="session")
+def app_no_db(request):
+    """
+    Flask application object factory for testing session.  Doesn't initialize
+    database connection!
+    """
+    app = create_app(__name__, config_object=TestConfig, set_up_database=False)
     ctx = app.app_context()
     ctx.push()
 
@@ -26,12 +44,17 @@ def db(app, request):
     """
     Database object for testing session.
     """
-    def teardown():
-        _db.drop_all()
-
+    from budgetApp.app import DbSession as _db
     _db.app = app
+    _db.app.connection = _db.app.engine.connect()
+    Base.metadata.create_all(bind=app.engine)
     # apply migrations here
+
+    def teardown():
+        Base.metadata.drop_all(bind=app.engine)
+        _db.app.connection.close()
     request.addfinalizer(teardown)
+
     return _db
 
 
@@ -40,16 +63,14 @@ def session(db, request):
     """
     Creates a new database connection for a test duration.
     """
-    connection = db.engine.connect()
-    transaction = connection.begin()
+    db.app.transaction = db.app.connection.begin_nested()
 
-    options = dict(bind=connection, binds={})
-    session = db.create_scoped_session(options=options)
+    session = db()
 
     def teardown():
-        transaction.rollback()
-        connection.close()
-        session.remove()
+        session.close()
+        db.app.transaction.rollback()  # Y U NO WORKIN !!!
+        # print(session, dir(session))
 
     request.addfinalizer(teardown)
     return session

@@ -1,31 +1,81 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 from __future__ import absolute_import
 
-from flask import Flask, render_template
+from flask import Flask, render_template, _app_ctx_stack, abort
 from flask_debugtoolbar import DebugToolbarExtension
 from flask.ext.restful import Api
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session, Query as SAQuery
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+
 from .settings import ProdConfig
 # from .assets import assets
-from .extensions import db
 # from budgetApp import public, user
 
+# database session registry object, initialized once from create_app factory
+DbSession = None
 
-def create_app(name_handler, config_object=ProdConfig, set_up_extensions=True):
+
+class BaseQuery(SAQuery):
+    """
+    Extended SQLAlchemy Query class, provides :meth:`BaseQuery.first_or_404`
+    and :meth:`BaseQuery.get_or_404` similarily to Flask-SQLAlchemy.
+    These methods are additional, :class:`BaseQuery` works like a normal
+    SQLAlchemy query class.
+    """
+
+    def get_or_404(self, identity):
+        result = self.get(identity)
+        if result is None:
+            abort(404)
+        return result
+
+    def first_or_404(self):
+        result = self.first()
+        if result is None:
+            abort(404)
+        return result
+
+
+def create_app(name_handler, config_object=ProdConfig, set_up_database=True):
     """
     Application factory (http://flask.pocoo.org/docs/patterns/appfactories/)
 
     :param name_handler: name the application is created and bounded to.
     :param config_object: The configuration object to use.
-    :param bool set_up_extensions: register all used extensions.
+    :param bool set_up_database: create a database session factory, connect to
+                                 the engine (specified in
+                                 `config_object.SQLALCHEMY_DATABASE_URI`).
     """
     app = Flask(name_handler)
     app.config.from_object(config_object)
+    app.engine = None
+
+    if set_up_database:
+        app.engine = create_engine(config_object.SQLALCHEMY_DATABASE_URI)
+        global DbSession
+        if not DbSession:
+            DbSession = scoped_session(
+                sessionmaker(bind=app.engine, query_cls=BaseQuery),
+                # __ident_func__ should be hashable, therefore used for
+                # recognizing different incoming requests
+                scopefunc=_app_ctx_stack.__ident_func__
+            )
+
+    @app.teardown_appcontext
+    def teardown(exception=None):
+        if isinstance(exception, NoResultFound) or \
+           isinstance(exception, MultipleResultsFound):
+            abort(404)
+        if DbSession:
+            DbSession.remove()
+
+    register_extensions(app)
     register_api(app)
-    if set_up_extensions:
-        register_extensions(app)
     register_blueprints(app)
     register_errorhandlers(app)
+
     return app
 
 
@@ -52,7 +102,7 @@ def register_api(app):
 
 
 def register_extensions(app):
-    db.init_app(app)
+    # db.init_app(app)
     # login_manager.init_app(app)
     # assets.init_app(app)
     toolbar = DebugToolbarExtension(app)

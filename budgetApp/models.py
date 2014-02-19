@@ -1,15 +1,22 @@
-from .extensions import db
+# coding: utf-8
+
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy.orm import relationship, backref
+
+Base = declarative_base()
 
 
-class User(db.Model):
+class User(Base):
     """User model."""
+    __tablename__ = "users"
 
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True)
-    source = db.Column(db.String(30))
-    first_name = db.Column(db.String(30))
-    last_name = db.Column(db.String(30))
-    bugdets = db.relationship("Budget", backref="user", lazy="dynamic")
+    id = Column(Integer, primary_key=True)
+    email = Column(String(120), unique=True)
+    source = Column(String(30))
+    first_name = Column(String(30))
+    last_name = Column(String(30))
+    # bugdets = relationship("Budget", backref="user", lazy="dynamic")
 
     def __init__(self, email, source, first_name, last_name):
         self.email = email
@@ -25,15 +32,17 @@ class User(db.Model):
                                       self.email)
 
 
-class Budget(db.Model):
+class Budget(Base):
     """Budget item model for specific User."""
+    __tablename__ = "budgets"
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    category = db.Column(db.String(50))
-    description = db.Column(db.String(80))
-    date = db.Column(db.DateTime)
-    value = db.Column(db.Float)
+    id = Column(Integer, primary_key=True)
+    category = Column(String(50))
+    description = Column(String(80))
+    date = Column(DateTime)
+    value = Column(Float)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User", backref=backref("budgets", order_by=date))
 
     def __init__(self, description, category, date, value, user=None):
         self.description = description

@@ -3,7 +3,7 @@
 from flask.ext.restful import Resource
 from flask.ext.restful.reqparse import RequestParser
 
-from ..extensions import db
+from ..app import DbSession
 from ..models import User
 from ..serializers import UserSerializer
 
@@ -24,7 +24,7 @@ class UsersList(Resource):
         """
         Return all of the users.
         """
-        users = User.query.all()
+        users = DbSession.query(User).all()
         return {"users": UserSerializer(users, many=True).data}
 
     def post(self):
@@ -34,9 +34,9 @@ class UsersList(Resource):
         args = users_parser.parse_args()
         user = User(args["email"], args["source"], args["first_name"],
                     args["last_name"])
-        db.session.add(user)
-        db.session.commit()
-        print(UserSerializer(User.query.get(2)).data)
+        DbSession.add(user)
+        DbSession.commit()
+        # print(UserSerializer(User.query.get(2)).data)
         # user = UserSerializer(User.query.get(user.id)).data
         return {"user": UserSerializer(User.query.get(user.id)).data}, 201
 
@@ -45,7 +45,7 @@ def abort_no_user(user_id):
     """
     Abort current request if the user is not present in database.
     """
-    User.query.filter_by(id=user_id).first_or_404()
+    DbSession.query(User).filter_by(id=user_id).first_or_404()
 
 
 class UserResource(Resource):
@@ -61,7 +61,7 @@ class UserResource(Resource):
         :param user_id: the id of the sought after user
         :type user_id: str
         """
-        user = User.query.filter_by(id=user_id).first_or_404()
+        user = DbSession.query(User).filter_by(id=user_id).first_or_404()
         return {"user": UserSerializer(user).data}
 
     def put(self, user_id):
@@ -72,15 +72,15 @@ class UserResource(Resource):
         :type user_id: str
         """
         args = users_parser.parse_args()
-        user = User.query.filter_by(id=user_id).first_or_404()
+        user = DbSession.query(User).filter_by(id=user_id).first_or_404()
         user.email, user.source, user.first_name, user.last_name = (
             args["email"],
             args["source"],
             args["first_name"],
             args["last_name"]
         )
-        db.session.update(user)
-        db.session.commit()
+        DbSession.update(user)
+        DbSession.commit()
         return {"user": UserSerializer(user).data}, 201
 
     def delete(self, user_id):
@@ -91,7 +91,7 @@ class UserResource(Resource):
         :param user_id: the id of the sought after user
         :type user_id: str
         """
-        user = User.query.filter_by(id=user_id).first_or_404()
-        db.session.delete(user)
-        db.session.commit()
+        user = DbSession.query(User).filter_by(id=user_id).first_or_404()
+        DbSession.delete(user)
+        DbSession.commit()
         return '', 204

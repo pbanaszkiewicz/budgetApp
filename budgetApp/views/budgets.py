@@ -5,7 +5,7 @@ from flask.ext.restful import Resource, abort, types
 from flask.ext.restful.reqparse import RequestParser
 from decimal import Decimal
 
-from ..extensions import db
+from ..app import DbSession
 from ..models import Budget, User
 from ..serializers import BudgetSerializer
 from .users import abort_no_user
@@ -40,8 +40,8 @@ class UsersBudgetList(Resource):
         Return the list of user's bugdets.  If the user doesn't exist, abort
         with 404.  If no budgets for the user are found, return empty list.
         """
-        abort_no_user(user_id)
-        result = Budget.query.filter_by(user_id=user_id)
+        abort_no_user(user_id)  # is this really necessary?  Maybe use JOIN?
+        result = DbSession.query(Budget).filter_by(user_id=user_id)
         if result:
             return {"budgets": BudgetSerializer(result, many=True).data}
         return 'Not found', 404
@@ -58,8 +58,8 @@ class UsersBudgetList(Resource):
             args["date"] = Delorean().date.strftime(DELOREAN_DATE_FORMAT),
         budget = Budget(args["description"], args["category"], args["date"],
                         args["value"], user_id)
-        db.session.add(budget)
-        db.session.commit()
+        DbSession.add(budget)
+        DbSession.commit()
 
         return {
             "budget": BudgetSerializer(Budget.query.get(budget.id)).data
@@ -70,7 +70,7 @@ def abort_no_budget(budget_id):
     """
     Abort current request if the budget entry is not present in the dabatase.
     """
-    Budget.query.filter_by(id=budget_id).first_or_404()
+    DbSession.query(Budget).filter_by(id=budget_id).first_or_404()
 
 
 class BudgetResource(Resource):
@@ -86,7 +86,7 @@ class BudgetResource(Resource):
         :param budget_id: the id of the sought after budget entry
         :type budget_id: str
         """
-        budget = Budget.query.filter_by(id=budget_id).first_or_404()
+        budget = DbSession.query(Budget).filter_by(id=budget_id).first_or_404()
         return {"budget": BudgetSerializer(budget).data}
 
     def put(self, budget_id):
@@ -97,7 +97,7 @@ class BudgetResource(Resource):
         :type budget_id: str
         """
         args = budget_update_parser.parse_args()
-        budget = Budget.query.filter_by(id=budget_id).first_or_404()
+        budget = DbSession.query(Budget).filter_by(id=budget_id).first_or_404()
 
         budget.description, budget.category, budget.value, budget.user_id = (
             args["description"], args["category"], args["value"],
@@ -108,8 +108,8 @@ class BudgetResource(Resource):
             args["date"] = Delorean().date.strftime(DELOREAN_DATE_FORMAT),
         budget.date = args["date"]
 
-        db.session.update(budget)
-        db.session.commit()
+        DbSession.update(budget)
+        DbSession.commit()
         return ({"budget": BudgetSerializer(Budget.query.get(budget_id)).data},
                 201)
 
@@ -121,7 +121,7 @@ class BudgetResource(Resource):
         :param budget_id: the id of the sought after budget entry
         :type budget_id: str
         """
-        budget = Budget.query.filter_by(id=budget_id).first_or_404()
-        db.session.delete(budget)
-        db.session.commit()
+        budget = DbSession.query(Budget).filter_by(id=budget_id).first_or_404()
+        DbSession.delete(budget)
+        DbSession.commit()
         return '', 204
