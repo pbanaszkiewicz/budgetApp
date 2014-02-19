@@ -3,7 +3,7 @@
 
 import os
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
@@ -41,9 +41,7 @@ setup(
     author_email='piotr@banaszkiewicz.org',
     url='https://github.com/pbanaszkiewicz/budgetApp',
 
-    packages=[
-        'budgetApp',
-    ],
+    packages=find_packages(),
     package_dir={'budgetApp': 'budgetApp'},
     include_package_data=True,
     install_requires=requirements,
