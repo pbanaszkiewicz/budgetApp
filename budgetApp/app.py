@@ -53,7 +53,7 @@ def create_app(name_handler, config_object=ProdConfig, set_up_database=True):
     app.engine = None
 
     if set_up_database:
-        app.engine = create_engine(config_object.SQLALCHEMY_DATABASE_URI)
+        app.engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"])
         global DbSession
         if not DbSession:
             DbSession = scoped_session(

@@ -11,7 +11,7 @@ def app(request):
     Flask application object factory for testing session with database
     connection.
     """
-    app = create_app(__name__, config_object=TestConfig, set_up_database=True)
+    app = create_app(__name__, config_object=TestConfig, set_up_database=False)
     ctx = app.app_context()
     ctx.push()
 
@@ -61,7 +61,8 @@ def db(app, request):
 @pytest.fixture(scope="function")
 def session(db, request):
     """
-    Creates a new database connection for a test duration.
+    Creates a new database session (with working transaction) for a test
+    duration.
     """
     db.app.transaction = db.app.connection.begin_nested()
 
