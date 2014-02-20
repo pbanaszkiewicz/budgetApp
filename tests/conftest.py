@@ -1,7 +1,8 @@
 import pytest
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine import Engine
 
 from budgetApp.settings import TestConfig
 from budgetApp.app import create_app
@@ -48,8 +49,17 @@ def db(app_no_db, request):
     Database object for testing session.
     """
     _app = app_no_db
-
     _app.engine = create_engine(_app.config["SQLALCHEMY_DATABASE_URI"])
+
+    @event.listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        """
+        Make SQLite recognize ON DELETE CASCADE.
+        """
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     Base.metadata.create_all(bind=_app.engine)
     _app.connection = _app.engine.connect()
 

@@ -16,7 +16,10 @@ class User(Base):
     source = Column(String(30))
     first_name = Column(String(30))
     last_name = Column(String(30))
-    # bugdets = relationship("Budget", backref="user", lazy="dynamic")
+
+    # I prefer explicit 2-way relationship than implicit
+    budgets = relationship("Budget", back_populates="user",
+                           cascade="all,delete")
 
     def __init__(self, email, source, first_name, last_name):
         self.email = email
@@ -41,8 +44,10 @@ class Budget(Base):
     description = Column(String(80))
     date = Column(DateTime)
     value = Column(Float)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    user = relationship("User", backref=backref("budgets", order_by=date))
+
+    # I prefer explicit 2-way relationship than implicit
+    user = relationship("User", back_populates="budgets")
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
 
     def __init__(self, description, category, date, value, user):
         self.description = description
