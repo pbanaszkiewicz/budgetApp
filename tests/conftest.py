@@ -47,14 +47,14 @@ def session(app, request):
     """
     app.transaction = app.connection.begin()
     app.testing = True
-    # ctx = app.app_context()
-    # ctx.push()
+    ctx = app.app_context()
+    ctx.push()
     session = budgetApp.app.DbSession()
 
     def teardown():
         app.transaction.close()
         session.close()
-        # ctx.pop()
+        ctx.pop()
     request.addfinalizer(teardown)
 
     return session
