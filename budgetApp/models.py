@@ -5,7 +5,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 
-class BaseModel:
+class BaseModel(object):
     """
     Extend base class for models with some specific methods / thingies.
     """
