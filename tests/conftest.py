@@ -1,9 +1,9 @@
 import pytest
 
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
+import budgetApp
 from budgetApp.settings import TestConfig
 from budgetApp.app import create_app
 from budgetApp.models import Base
@@ -11,45 +11,7 @@ from budgetApp.models import Base
 
 @pytest.fixture(scope="session")
 def app(request):
-    """
-    Flask application object factory for testing session with database
-    connection.
-    """
-    app = create_app(__name__, config_object=TestConfig, set_up_database=True)
-    ctx = app.app_context()
-    ctx.push()
-
-    def teardown():
-        ctx.pop()
-    request.addfinalizer(teardown)
-
-    return app
-
-
-@pytest.fixture(scope="session")
-def app_no_db(request):
-    """
-    Flask application object factory for testing session.  Doesn't initialize
-    database connection!
-    """
-    app = create_app(__name__, config_object=TestConfig, set_up_database=False)
-    ctx = app.app_context()
-    ctx.push()
-
-    def teardown():
-        ctx.pop()
-    request.addfinalizer(teardown)
-
-    return app
-
-
-@pytest.fixture(scope="session")
-def db(app_no_db, request):
-    """
-    Database object for testing session.
-    """
-    _app = app_no_db
-    _app.engine = create_engine(_app.config["SQLALCHEMY_DATABASE_URI"])
+    _app = create_app("testingsession", config_object=TestConfig)
 
     @event.listens_for(Engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -63,28 +25,41 @@ def db(app_no_db, request):
     Base.metadata.create_all(bind=_app.engine)
     _app.connection = _app.engine.connect()
 
-    _app.sessionmaker = sessionmaker()
+    # No idea why, but between this app() fixture and session() fixture there
+    # is being created a new session object somewhere.  And in my tests I found
+    # out that in order to have transactions working properly, I need to have
+    # all these scoped sessions configured to use current connection.
+    budgetApp.app.DbSession.configure(bind=_app.connection)
 
-    def teardown():
+    def teardown_request():
         _app.connection.close()
         Base.metadata.drop_all(bind=_app.engine)
-    request.addfinalizer(teardown)
+    request.addfinalizer(teardown_request)
 
     return _app
 
 
 @pytest.fixture(scope="function")
-def session(db, request):
+def session(app, request):
     """
     Creates a new database session (with working transaction) for a test
     duration.
     """
-    db.transaction = db.connection.begin()
-    session = db.sessionmaker(bind=db.connection)
+    app.transaction = app.connection.begin()
+    app.testing = True
+    # ctx = app.app_context()
+    # ctx.push()
+    session = budgetApp.app.DbSession()
 
     def teardown():
+        app.transaction.close()
         session.close()
-        db.transaction.rollback()
+        # ctx.pop()
     request.addfinalizer(teardown)
 
     return session
+
+
+@pytest.fixture(scope="function")
+def test_client(app):
+    return app.test_client()

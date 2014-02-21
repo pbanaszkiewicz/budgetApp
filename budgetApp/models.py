@@ -2,9 +2,22 @@
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 
-Base = declarative_base()
+
+class BaseModel:
+    """
+    Extend base class for models with some specific methods / thingies.
+    """
+
+    def as_dict(self):
+        """
+        Return an iterable dictionary of model's fields.
+        """
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+
+Base = declarative_base(cls=BaseModel)
 
 
 class User(Base):

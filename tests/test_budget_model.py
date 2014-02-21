@@ -1,7 +1,6 @@
 # coding: utf-8
 import pytest
 from delorean import Delorean
-from sqlalchemy.exc import IntegrityError
 from budgetApp.models import User, Budget
 
 
