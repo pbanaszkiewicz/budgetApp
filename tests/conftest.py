@@ -9,8 +9,10 @@ from budgetApp.app import create_app
 from budgetApp.models import Base
 
 
-@pytest.fixture(scope="session")
-def app(request):
+# @pytest.fixture(scope="session")
+# def app(request):
+@pytest.yield_fixture(scope="session")
+def app():
     _app = create_app("testingsession", config_object=TestConfig)
 
     @event.listens_for(Engine, "connect")
@@ -31,16 +33,22 @@ def app(request):
     # all these scoped sessions configured to use current connection.
     budgetApp.app.DbSession.configure(bind=_app.connection)
 
-    def teardown_request():
-        _app.connection.close()
-        Base.metadata.drop_all(bind=_app.engine)
-    request.addfinalizer(teardown_request)
+    # def teardown_request():
+    #     _app.connection.close()
+    #     Base.metadata.drop_all(bind=_app.engine)
+    # request.addfinalizer(teardown_request)
 
-    return _app
+    # return _app
+    yield _app
+
+    _app.connection.close()
+    Base.metadata.drop_all(bind=_app.engine)
 
 
-@pytest.fixture(scope="function")
-def session(app, request):
+# @pytest.fixture(scope="function")
+# def session(app, request):
+@pytest.yield_fixture(scope="function")
+def session(app):
     """
     Creates a new database session (with working transaction) for a test
     duration.
@@ -51,15 +59,21 @@ def session(app, request):
     ctx.push()
     session = budgetApp.app.DbSession()
 
-    def teardown():
-        app.transaction.close()
-        session.close()
-        ctx.pop()
-    request.addfinalizer(teardown)
+    # def teardown():
+    #     app.transaction.close()
+    #     session.close()
+    #     ctx.pop()
+    # request.addfinalizer(teardown)
 
-    return session
+    # return session
+    yield session
+
+    app.transaction.close()
+    session.close()
+    ctx.pop()
 
 
-@pytest.fixture(scope="function")
+# @pytest.fixture(scope="function")
+@pytest.yield_fixture(scope="function")
 def test_client(app):
-    return app.test_client()
+    yield app.test_client()
