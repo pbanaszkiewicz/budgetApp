@@ -36,9 +36,7 @@ class UsersList(Resource):
                     args["last_name"])
         DbSession.add(user)
         DbSession.commit()
-        # print(UserSerializer(User.query.get(2)).data)
-        # user = UserSerializer(User.query.get(user.id)).data
-        return {"user": UserSerializer(User.query.get(user.id)).data}, 201
+        return {"user": UserSerializer(user).data}, 201
 
 
 def abort_no_user(user_id):

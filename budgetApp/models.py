@@ -3,12 +3,15 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
+from .app import DbSession
 
 
 class BaseModel(object):
     """
     Extend base class for models with some specific methods / thingies.
     """
+
+    query = DbSession.query_property()
 
     def as_dict(self):
         """

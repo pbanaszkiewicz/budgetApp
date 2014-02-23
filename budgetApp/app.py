@@ -115,7 +115,8 @@ def register_blueprints(app):
 
 def register_errorhandlers(app):
     def render_error(error):
-        return render_template("{0}.html".format(error.code)), error.code
+        return (render_template("templates/{0}.html".format(error.code)),
+                error.code)
     for errcode in [401, 404, 500]:
         app.errorhandler(errcode)(render_error)
     return None
