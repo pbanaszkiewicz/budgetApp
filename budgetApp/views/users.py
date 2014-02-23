@@ -25,7 +25,7 @@ class UsersList(Resource):
         Return all of the users.
         """
         users = DbSession.query(User).all()
-        return {"users": UserSerializer(users, many=True).data}
+        return {"users": UserSerializer(users, many=True).data}, 200
 
     def post(self):
         """
