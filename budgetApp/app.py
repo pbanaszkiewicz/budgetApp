@@ -41,7 +41,7 @@ class BaseQuery(SAQuery):
         return result
 
 
-def create_app(name_handler, config_object=None):
+def create_app(name_handler, config_object):
     """
     Application factory (http://flask.pocoo.org/docs/patterns/appfactories/)
 
@@ -49,12 +49,9 @@ def create_app(name_handler, config_object=None):
     :param config_object: the configuration object to use.
     """
     app = Flask(name_handler)
-    if not config_object:
-        config_object = ProdConfig
     app.config.from_object(config_object)
-    app.engine = None
-
     app.engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"])
+
     global DbSession
     DbSession.configure(bind=app.engine, query_cls=BaseQuery)
 

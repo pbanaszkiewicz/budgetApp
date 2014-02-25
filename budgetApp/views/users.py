@@ -60,7 +60,7 @@ class UserResource(Resource):
         :type user_id: str
         """
         user = DbSession.query(User).filter_by(id=user_id).first_or_404()
-        return {"user": UserSerializer(user).data}
+        return {"user": UserSerializer(user).data}, 200
 
     def put(self, user_id):
         """
@@ -77,7 +77,8 @@ class UserResource(Resource):
             args["first_name"],
             args["last_name"]
         )
-        DbSession.update(user)
+        # DbSession.update(user)
+        DbSession.add(user)
         DbSession.commit()
         return {"user": UserSerializer(user).data}, 201
 
@@ -89,6 +90,7 @@ class UserResource(Resource):
         :param user_id: the id of the sought after user
         :type user_id: str
         """
+        # TODO: improve this to be only one query?
         user = DbSession.query(User).filter_by(id=user_id).first_or_404()
         DbSession.delete(user)
         DbSession.commit()
