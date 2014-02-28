@@ -4,4 +4,4 @@
 # Delorean==0.3.1
 # SQLAlchemy==0.9.1
 # marshmallow==0.5.0
-file:..#egg=budgetApp
+..

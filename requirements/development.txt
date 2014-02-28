@@ -1,5 +1,5 @@
 # Changing production dependencies from a file list into setup.py
--e file:..#egg=budgetApp
+-e ..
 requests
 pytest
 pytest-cov
