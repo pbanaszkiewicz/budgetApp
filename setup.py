@@ -28,7 +28,14 @@ class PyTest(TestCommand):
 
 readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
-requirements = open('requirements/production.txt').readlines()
+# requirements = open('requirements/production.txt').readlines()
+requirements = """
+Flask==0.10.1
+Flask-RESTful==0.2.10
+Delorean==0.3.1
+SQLAlchemy==0.9.1
+marshmallow==0.5.0
+"""
 
 
 setup(

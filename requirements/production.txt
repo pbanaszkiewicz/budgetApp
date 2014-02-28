@@ -1,5 +1,7 @@
-Flask==0.10.1
-Flask-RESTful==0.2.10
-Delorean==0.3.1
-SQLAlchemy==0.9.1
-marshmallow==0.5.0
+# Changing production dependencies from a file list into setup.py
+# Flask==0.10.1
+# Flask-RESTful==0.2.10
+# Delorean==0.3.1
+# SQLAlchemy==0.9.1
+# marshmallow==0.5.0
+file:..#egg=budgetApp
