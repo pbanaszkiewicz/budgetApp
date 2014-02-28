@@ -1,3 +1,2 @@
-# Included because many PaaS require a requirements.txt file in the project
-# root.  Just install the production requirements.
--r requirements/production.txt
+# Changing production dependencies from a file list into setup.py
+.
