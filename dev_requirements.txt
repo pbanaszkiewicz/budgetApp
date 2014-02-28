@@ -1,5 +1,5 @@
 # Changing production dependencies from a file list into setup.py
--e ..
+-e .
 requests
 pytest
 pytest-cov
