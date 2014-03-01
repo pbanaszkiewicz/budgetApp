@@ -19,26 +19,7 @@ def test_get_users_list(session):
     assert code == 200
 
 
-def test_post_users_list(test_client, session):
-    """Test for POST /users"""
-    result = test_client.post(
-        "/users",
-        data=dict(
-            email="test1@example.com",
-            source="web",
-            first_name="John",
-            last_name="Smith"
-        )
-    )
-    contents = json.loads(result.data)
-
-    assert session.query(User).count() == 1
-    assert result.status_code == 201
-    assert (contents["user"] == session.query(User)
-                                       .get(contents["user"]["id"]).as_dict())
-
-
-def test_post_users_list2(app, session):
+def test_post_users_list(app, session):
     """Test for POST /users"""
     data = dict(
         email="test1@example.com",
