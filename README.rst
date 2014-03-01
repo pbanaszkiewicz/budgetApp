@@ -19,7 +19,39 @@ Not yet.
 Installation
 ------------
 
-Not yet.
+Production
+~~~~~~~~~~
+
+1. Make a virtual environment::
+
+    virtualenv budgetApp_venv
+
+2. Activate it::
+
+    source budgetApp_venv/bin/activate
+
+3. Clone this repository::
+
+    cd budgetApp_venv
+    git clone https://github.com/pbanaszkiewicz/budgetApp.git
+    cd budgetApp
+
+4. Install this application::
+
+    python setup.py install
+
+It should be now all installed.
+
+Development
+~~~~~~~~~~~
+
+Follow steps 1--3 from `Production`_.  Then install development packages::
+
+    pip install -r dev_requirements.txt
+
+This will take care of installing ``budgetApp`` in development version (ie.
+editable), as well as it's development dependencies (like testing and
+documentation software).
 
 Configuration
 -------------
