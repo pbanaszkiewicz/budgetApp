@@ -17,6 +17,8 @@ def app():
     a `PRAGMA foreign_keys=ON` is issued (it helps with ON DELETE CASCADE).
     """
     _app = create_app("testingsession", config_object=TestConfig)
+    # _app.testing = False
+    # _app.debug = True
 
     if _app.config["SQLALCHEMY_DATABASE_URI"].lower().startswith("sqlite"):
         @event.listens_for(Engine, "connect")
@@ -51,7 +53,6 @@ def session(app):
     duration.
     """
     app.transaction = app.connection.begin()
-    app.testing = True
 
     # pushing new Flask application context for multiple-thread tests to work
     ctx = app.app_context()

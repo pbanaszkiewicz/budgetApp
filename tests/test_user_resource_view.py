@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import pytest
+from werkzeug.exceptions import NotFound
 from budgetApp.models import User
 
 
@@ -19,11 +20,18 @@ def test_get_user(user1, user2, session):
     Test for GET /users/:user_id: -- test successfully getting a specific
     user.
     """
+    from budgetApp.views.users import UserResource
+
+    # cannot test it for code==404, because actual code uses abort(404), which
+    # uses raise NotFound.
+    # BTW: error handlers somehow don't work...
+    with pytest.raises(NotFound):
+        result, code = UserResource().get(user1.id)
+
     session.add(user1)
     session.add(user2)
     session.commit()
 
-    from budgetApp.views.users import UserResource
     result, code = UserResource().get(user1.id)
 
     assert code == 200

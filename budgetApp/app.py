@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session, Query as SAQuery
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
-from .settings import ProdConfig
+# from .settings import ProdConfig
 # from .assets import assets
 # from budgetApp import public, user
 
@@ -48,7 +48,7 @@ def create_app(name_handler, config_object):
     :param name_handler: name the application is created and bounded to.
     :param config_object: the configuration object to use.
     """
-    app = Flask(name_handler)
+    app = Flask(name_handler, template_folder="budgetApp/templates")
     app.config.from_object(config_object)
     app.engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"])
 
@@ -98,7 +98,7 @@ def register_extensions(app):
     # db.init_app(app)
     # login_manager.init_app(app)
     # assets.init_app(app)
-    toolbar = DebugToolbarExtension(app)
+    DebugToolbarExtension(app)
     # cache.init_app(app)
     # migrate.init_app(app, db)
     return None
@@ -112,8 +112,8 @@ def register_blueprints(app):
 
 def register_errorhandlers(app):
     def render_error(error):
-        return (render_template("templates/{0}.html".format(error.code)),
+        return (render_template("{0}.html".format(error.code)),
                 error.code)
     for errcode in [401, 404, 500]:
-        app.errorhandler(errcode)(render_error)
+        app.register_error_handler(errcode, render_error)
     return None

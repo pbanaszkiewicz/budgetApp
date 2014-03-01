@@ -1,17 +1,20 @@
 # coding: utf-8
 
-from flask import json
 from budgetApp.models import User
 
 
 def test_get_users_list(session):
+    """Test for GET /users"""
+    from budgetApp.views.users import UsersList
+    result, code = UsersList().get()
+    assert code == 200  # even though we have no users
+
     """Test for GET /users"""
     u1 = User("test1@example.com", "web", "John", "Smith")
     u2 = User("test2@example.com", "web", "Anna", "Smith")
     session.add_all([u1, u2])
     session.commit()
 
-    from budgetApp.views.users import UsersList
     result, code = UsersList().get()
 
     assert len(result["users"]) == 2

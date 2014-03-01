@@ -40,10 +40,9 @@ class UsersBudgetList(Resource):
         Return the list of user's bugdets.  If the user doesn't exist, abort
         with 404.  If no budgets for the user are found, return empty list.
         """
-        abort_no_user(user_id)  # is this really necessary?  Maybe use JOIN?
-        result = DbSession.query(Budget).filter_by(user_id=user_id)
+        result = DbSession.query(Budget).filter_by(user_id=user_id).all()
         if result:
-            return {"budgets": BudgetSerializer(result, many=True).data}
+            return {"budgets": BudgetSerializer(result, many=True).data}, 200
         return 'Not found', 404
 
     def post(self, user_id):
